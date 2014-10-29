@@ -7,6 +7,25 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source ${DIR}/envcov.sh
+FORMAT="html"
+
+while [[ $# > 1 ]]
+do
+key="$1"
+shift
+
+case $key in
+    -f|--format)
+        case $1 in
+            cobertura-xml)
+                FORMAT="$1"
+                shift
+             ;;
+        esac
+        shift
+        ;;
+esac
+done
 
 remove_old_report()
 {
@@ -36,10 +55,31 @@ exclude_data()
     # Remove other patterns here...
 }
 
-generate_report()
+generate_html_report()
 {
     "${LCOV_PATH}/genhtml" --output-directory . ${LCOV_INFO}
     open index.html
+}
+
+generate_cobertura_xml_report()
+{
+    TMP_COVERAGE_FILE="/tmp/coverage.xml"
+    python "${XCODECOVERAGE_PATH}/lcov_cobertura.py" ${LCOV_INFO} -b ../ -o "$TMP_COVERAGE_FILE"
+    cat "$TMP_COVERAGE_FILE"
+    rm "$TMP_COVERAGE_FILE"
+}
+
+generate_report()
+{
+    case "$FORMAT" in
+    (cobertura-xml)
+        generate_cobertura_xml_report
+        ;;
+    (html|*)
+        generate_html_report
+        ;;
+esac
+
 }
 
 remove_old_report
